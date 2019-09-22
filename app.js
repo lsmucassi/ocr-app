@@ -19,6 +19,7 @@ const storage = multer.diskStorage({
 const upload = multer({storage: storage}).single("avatar");
 
 app.set("view engine", "ejs");
+app.use(express.static("public"))
 
 //Routes
 app.get("/", (req, res) => {
@@ -31,11 +32,24 @@ app.post("/upload", (req, res) => {
             if(err) return console.log("err in post uploads", err);
 
             worker
-            .recognize(data, "eng", )
+            .recognize(data, "eng", {tessjs_create_pdf: "1"})
+            .progress(progress => {
+                console.log(progress);
+            })
+            .then(result => {
+                // res.send(result.text);
+                res.redirect("/download")
+            })
+            .finally(() => worker.terminate());
         });
     });
 });
 
+app.get("/download", (req, res) => {
+    const file = `${__dirname}/tesseract.js-ocr-result.pdf`;
+    res.download(file);
+});
+
 //slave server serve
-const PORT = 5000 || process.env.PORT;
+const PORT = 8080 || process.env.PORT;
 app.listen(PORT, () => console.log(`Master, I am your slave and serving on ${PORT}`))
